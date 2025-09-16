@@ -1,4 +1,19 @@
-# ignore IDE files
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.so
+*.dylib
+*.dll
+.pytest_cache/
+*.nbi
+*.nbc
+*.ipynb_checkpoints/
+.DS_Store
+cpp/build/
+wheelhouse/
+cmake-build-*/# ignore IDE files
 *.pyc
 *.swp
 .idea/
@@ -16,3 +31,4 @@ build.ninja
 
 # jupyter
 .ipynb_checkpoints/
+.venv/

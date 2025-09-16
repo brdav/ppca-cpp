@@ -1,100 +1,99 @@
-# Probabilistic PCA (PPCA) in Python
 
-## Missing values? No problem!
+# lib-ppca
 
-PPCA is a probabilistic latent variable model, whose maximum likelihood solution corresponds to PCA. For an introduction to PPCA, see [1].
+Probabilistic PCA (PPCA) with missing-data support — fast C++ core, clean Python API.
 
-This implementation uses the expectation-maximization (EM) algorithm to find maximum-likelihood estimates of the PPCA model parameters. This enables a principled handling of missing values in the dataset, assuming that the values are missing at random (see equations further below).
+<img src="./docs/teaser.jpg" width="720" alt="teaser"/>
 
-## Requirements
+## Overview
 
-This implementation requires Python >= 3.9 and can be installed as a package with:
-```
-pip install -e .
-```
+**lib-ppca** implements Probabilistic Principal Component Analysis (PPCA) as described by Tipping & Bishop (1999), with a focus on speed, usability, and robust handling of missing data. The core is written in C++ (Armadillo + CARMA + pybind11), exposed via a simple Python interface.
 
-To run the `demo.ipynb` notebook, the following packages are additionally required:
-```
-pip install notebook scikit-learn matplotlib
-```
+### Key Features
 
-## Demo
+- **Handles missing values natively:** No need for manual imputation—just use `np.nan` for missing entries.
+- **Familiar API:** Drop-in replacement for PCA with attributes like `components_`, `explained_variance_`, etc.
+- **Probabilistic modeling:** Compute log-likelihoods, posterior latent variables, and reconstructions.
+- **Fast and scalable:** Optimized C++ backend for large datasets.
+- **Flexible:** Supports both batch and online (mini-batch) EM.
 
-<img src="./demo.png" width="900"/>
+### Main Functionalities
 
-In the `demo.ipynb` we show basic usage and compare this implementation to the `sklearn` implementation. In short, PPCA can be used similarly to its `sklearn` counterpart:
-```
-from ppca import PPCA
-...
-ppca = PPCA(n_components=2)
-# X contains data with possibly missing values (= np.nan)
-# Z are the transformed values
-Z = ppca.fit_transform(X)
-print("explained variance: ", ppca.explained_variance_)
-...
+- Fit a PPCA model to data, even with missing values.
+- Transform data to a lower-dimensional latent space.
+- Reconstruct or impute missing values from the latent space.
+- Compute data log-likelihood and evaluate model fit.
+- Access principal axes, explained variance, and more.
+
+## Quick Start
+
+```bash
+pip install lib-ppca
 ```
 
-However, in addition to the `sklearn` implementation, PPCA can output distributions, handle missing values, etc.
+Usage example:
 
-## EM for PPCA with Missing Values
+```python
+import numpy as np
+from lib_ppca import PPCA
 
-Most implementations on Github for PCA with missing values use the EM imputation algorithm described in Roweis [3]. However, without formulating a probabilistic model, there is e.g. no obvious way to transform unseen data with missing values. Instead, in this repository, we implement the full probabilistic PCA model.
+X_train = np.random.randn(600, 10)
+X_train[::7, 3] = np.nan  # introduce missing values
+X_test = np.random.randn(100, 10)
+X_test[::7, 2] = np.nan  # introduce missing values
 
-References [1] and [2] provide derivations and detailed discussions of the model and its optimization with EM, however, the missing value case is not explained in detail. Therefore, the necessary equations are provided here in compact form. Familiarity with [1] and [2] is assumed.
+model = PPCA(n_components=3, batch_size=200)
+model.fit(X_train)
 
-First, note that we can simply integrate out missing values from the marginal likelihood. Let $`\mathbf{x}_n^\text{m}`$ denote the missing entries of observation $`\mathbf{x}_n`$ and $`\mathbf{x}_n^\text{o}`$ the observed entries.
+mZ, covZ = model.posterior_latent(X_test) # latent representation
+mX, covX = model.likelihood(mZ)           # reconstruction
+ll = model.score(X_test)                  # mean log likelihood
 
-```math
-p(\mathbf{X}|\mathbf{\mu}, \mathbf{W}, \sigma^2) = \prod_{n=1}^N \int p(\mathbf{z}_n) p(\mathbf{x}_n | \mathbf{z}_n, \mathbf{\mu}, \mathbf{W}, \sigma^2) \text{d}\mathbf{z}_n
-```
-```math
-= \prod_{n=1}^N \int p(\mathbf{z}_n) \prod_{x_{ni} \in \mathbf{x}_n^\text{o}} \mathcal{N}(x_{ni}|\mathbf{w}_i^\text{T} \mathbf{z}_n + \mu_i, \sigma^2) \int \prod_{x_{nj} \in \mathbf{x}_n^\text{m}} \mathcal{N}(x_{nj} | \mathbf{w}_j^\text{T} \mathbf{z}_n + \mu_j, \sigma^2) \text{d}\mathbf{x}_n^\text{m} \text{d}\mathbf{z}_n
-```
-```math
-= \prod_{n=1}^N p(\mathbf{x}_n^\text{o}|\mathbf{\mu}, \mathbf{W}, \sigma^2)
-```
+# multiple imputation
+X_imputed = model.sample_missing(X_test, n_draws=5)
 
-Note that $`\mathbf{w}_i^\text{T}`$ is the $`i`$-th row of $`\mathbf{W}`$. From this equation we can already see that the maximum likelihood estimate of $`\mathbf{\mu}`$ is given by:
-
-```math
-\mathbf{\mu}_{\text{ML}} = \frac{1}{\sum_{m=1}^N \iota_{mi}} \sum_{n=1}^N\iota_{ni} x_{ni}
-```
-
-$`\iota_{ni}`$ are indicator variables which are 1 if $`x_{ni}`$ is observed and 0 otherwise. Estimating $`\mathbf{W}_\text{ML}`$ and $`\sigma_\text{ML}^2`$ is more complicated and we have to resort to the EM algorithm.
-
-The expectation of the complete-data log likelihood w.r.t. the latent variables is as follows:
-
-```math
-\mathbb{E} [\text{ln } p(\mathbf{X}, \mathbf{Z} | \mathbf{\mu}, \mathbf{W}, \sigma^2)] = \mathbb{E} [\sum_{n=1}^N \{ \text{ln }p(\mathbf{z}_n) + \sum_{i=1}^D \iota_{ni} \text{ln } \mathcal{N} (\mathbf{x}_{ni} | \mathbf{w}_i^\text{T} \mathbf{z}_n + \mu_i, \sigma^2)\}]
-```
-```math
-= -\sum_{n=1}^N \{ \frac{M}{2} \text{ln }(2\pi) + \frac{1}{2} \text{Tr}(\mathbb{E}[\mathbf{z}_n \mathbf{z}_n^\text{T}]) + \sum_{i=1}^D \iota_{ni} \{ \frac{1}{2} \text{ln }(2\pi\sigma^2) + \frac{1}{2\sigma^2}(x_{ni} - \mu_i)^2 - \frac{1}{\sigma^2}\mathbb{E}[\mathbf{z}_n]^\text{T} \mathbf{w}_i (x_{ni} - \mu_i) + \frac{1}{2\sigma^2} \text{Tr}(\mathbb{E}[\mathbf{z}_n \mathbf{z}_n^\text{T}] \mathbf{w}_i \mathbf{w}_i^\text{T})\} \}
+print("Components shape:", model.components_.shape)
+print("Explained variance ratio:", model.explained_variance_ratio_)
 ```
 
-In the E-step, we estimate the sufficient statistics of the latent posterior:
+For more examples and PPCA functionalities see the [demo notebook](https://github.com/brdav/lib-ppca/notebooks/demo.ipynb).
 
-```math
-\mathbb{E} [\mathbf{z}_n] = \mathbf{M}_n^{-1} \mathbf{W}_n^\text{T} \mathbf{y}_n
-```
-```math
-\mathbb{E} [\mathbf{z}_n \mathbf{z}_n^\text{T}] = \sigma^2 \mathbf{M}_n^{-1} + \mathbb{E}[\mathbf{z}_n] \mathbb{E}[\mathbf{z}_n]^\text{T}
-```
+## Installation from Source
 
-where $`\mathbf{y}_n`$ contains the observed elements of $`\mathbf{x}_n`$ minus the corresponding elements of $`\mathbf{\mu}_\text{ML}`$, $`\mathbf{W}_n`$ is the matrix formed by the rows of $`\mathbf{W}`$ corresponding to observed elements in $`\mathbf{x}_n`$, and $`\mathbf{M}_n = \mathbf{W}_n^\text{T} \mathbf{W}_n + \sigma^2 \mathbf{I}`$.
+Install from a fresh clone (initialise the CARMA submodule first – otherwise the build will fail):
 
-In the M-step, we maximize the complete-data log likelihood while fixing the latent variable posterior.
-
-```math
-\mathbf{W}_\text{new} = [\sum_{n=1}^N \mathbf{y}_n \mathbb{E}[\mathbf{z}_n]^\text{T}] [\sum_{n=1}^N \mathbb{E}[\mathbf{z}_n \mathbf{z}_n^\text{T}]]^{-1}
-```
-```math
-\sigma^2_\text{new} = \frac{1}{\sum_{n=1}^N \sum_{i=1}^D \iota_{ni}} \sum_{n=1}^N \sum_{i=1}^D \iota_{ni} \{ (x_{ni} - \mu_{\text{ML}, i})^2 - 2 \mathbb{E}[\mathbf{z}_n]^\text{T} \mathbf{w}_i^\text{new} (x_{ni} - \mu_{\text{ML}, i}) + \text{Tr}(\mathbb{E}[\mathbf{z}_n \mathbf{z}_n^\text{T}] \mathbf{w}_i^\text{new} (\mathbf{w}_i^\text{new})^\text{T}) \}
+```bash
+git clone https://github.com/brdav/lib-ppca.git
+cd lib-ppca
+git submodule update --init --recursive   # pulls extern/carma
+pip install .                             # build and install
 ```
 
-## References
+Use an editable install for development:
 
-[1] Bishop, C. M., Pattern Recognition and Machine Learning. New York: Springer, 2006.
+```bash
+git clone https://github.com/brdav/lib-ppca.git
+cd lib-ppca
+git submodule update --init --recursive   # pulls extern/carma
+pip install -e '.[dev]'                   # editable install
+pre-commit install                        # register pre-commit hooks
+```
 
-[2] Tipping, M. E. and Bishop, C. M., Probabilistic Principal Component Analysis. Journal of the Royal Statistical Society: Series B (Statistical Methodology), 1999.
+## Internals
 
-[3] Roweis, S., EM algorithms for PCA and SPCA. In Proceedings of the 1997 conference on Advances in neural information processing systems 10 (NIPS '97), 1998, 626-632.
+PPCA uses an Expectation-Maximization (EM) algorithm to learn parameters through maximum likelihood estimation. For details see the reference paper listed below. The equations for the EM algorithm in the presence of missing values are listed in [EQUATIONS.md](https://github.com/brdav/lib-ppca/EQUATIONS.md).
+
+## Citing
+
+If you use this code academically, cite the original PPCA paper:
+
+* M. Tipping & C. Bishop. Probabilistic Principal Component Analysis. JRSS B, 1999.
+
+You may also reference the repository URL.
+
+## License
+
+MIT License — see `LICENSE`.
+
+---
+Questions or requests? Open an issue.

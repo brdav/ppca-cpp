@@ -1,0 +1,59 @@
+[build-system]
+requires = ["scikit-build-core>=0.9.0", "pybind11>=2.11", "numpy"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "lib-ppca"
+version = "1.0.0"
+description = "Probabilistic PCA (PPCA) with missing-data support - fast C++ core, clean Python API"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.9"
+authors = [ { name = "brdav", email = "" } ]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: C++",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Scientific/Engineering :: Mathematics"
+]
+keywords = ["ppca", "probabilistic pca", "dimensionality reduction", "missing data"]
+dependencies = ["numpy>=1.22"]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7",
+  "build",
+  "wheel",
+  "packaging",
+  "scikit-learn>=1.7.1",
+  "pre-commit",
+]
+
+[project.urls]
+Homepage = "https://github.com/brdav/lib-ppca"
+Source = "https://github.com/brdav/lib-ppca"
+
+[tool.scikit-build]
+wheel.expand-macos-universal-tags = true
+cmake.minimum-version = "3.18"
+cmake.build-type = "Release"
+
+[tool.cibuildwheel]
+build = "cp39-* cp310-* cp311-*"
+# skip = "*-musllinux_*"
+test-command = "python -c \"import lib_ppca; print('Test passed')\""
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-q"
+testpaths = ["tests"]
+norecursedirs = [
+  "extern",
+  "build",
+  "_skbuild",
+]
+
+[tool.setuptools]
+exclude-package-data = { "lib-ppca" = [ "tests/*", "notebooks/*", "extern/carma/examples/*", "extern/carma/tests/*", "scripts/*" ] }

@@ -1,0 +1,19 @@
+name: Build Wheels
+on: [push, pull_request]
+jobs:
+  build_wheels:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive  # For CARMA submodule
+      - uses: actions/setup-python@v4
+      - run: pip install cibuildwheel
+      - run: cibuildwheel --output-dir wheelhouse
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.os }}
+          path: wheelhouse/
