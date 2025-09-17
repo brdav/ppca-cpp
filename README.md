@@ -1,9 +1,14 @@
 
 # lib-ppca
 
+[![Build Wheels](https://img.shields.io/github/actions/workflow/status/brdav/lib-ppca/.github/workflows/build.yml?branch=main)](https://github.com/brdav/lib-ppca/actions)
+[![PyPI version](https://img.shields.io/pypi/v/lib-ppca.svg)](https://pypi.org/project/lib-ppca)
+[![Python Versions](https://img.shields.io/pypi/pyversions/lib-ppca.svg)](https://pypi.org/project/lib-ppca)
+[![License](https://img.shields.io/github/license/brdav/lib-ppca.svg)](LICENSE)
+
 Probabilistic PCA (PPCA) with missing-data support — fast C++ core, clean Python API.
 
-<img src="./docs/teaser.jpg" width="720" alt="teaser"/>
+<img src="https://raw.githubusercontent.com/brdav/lib-ppca/main/docs/teaser.jpg" width="500" alt="teaser"/>
 
 ## Overview
 
@@ -12,24 +17,18 @@ Probabilistic PCA (PPCA) with missing-data support — fast C++ core, clean Pyth
 ### Key Features
 
 - **Handles missing values natively:** No need for manual imputation—just use `np.nan` for missing entries.
-- **Familiar API:** Drop-in replacement for PCA with attributes like `components_`, `explained_variance_`, etc.
-- **Probabilistic modeling:** Compute log-likelihoods, posterior latent variables, and reconstructions.
+- **Familiar API:** Drop-in replacement for scikit-learn PCA with attributes like `components_`, `explained_variance_`, etc.
+- **Probabilistic modeling:** Compute log-likelihoods, posterior latent variable distributions, multiple imputations, and more.
 - **Fast and scalable:** Optimized C++ backend for large datasets.
 - **Flexible:** Supports both batch and online (mini-batch) EM.
-
-### Main Functionalities
-
-- Fit a PPCA model to data, even with missing values.
-- Transform data to a lower-dimensional latent space.
-- Reconstruct or impute missing values from the latent space.
-- Compute data log-likelihood and evaluate model fit.
-- Access principal axes, explained variance, and more.
 
 ## Quick Start
 
 ```bash
 pip install lib-ppca
 ```
+
+Note: pre-built wheels are produced only for Linux and macOS (CI builds target ubuntu-latest and macos-latest). On other platforms (e.g. Windows) pip you will need to build from source (see further below).
 
 Usage example:
 
@@ -56,32 +55,51 @@ print("Components shape:", model.components_.shape)
 print("Explained variance ratio:", model.explained_variance_ratio_)
 ```
 
-For more examples and PPCA functionalities see the [demo notebook](https://github.com/brdav/lib-ppca/notebooks/demo.ipynb).
+For more examples and PPCA functionalities see the [demo notebook](https://github.com/brdav/lib-ppca/blob/main/notebooks/demo.ipynb).
 
 ## Installation from Source
 
-Install from a fresh clone (initialise the CARMA submodule first – otherwise the build will fail):
+Minimum requirements
+
+* CMake >= 3.18
+* Python >= 3.9 (+ development headers)
+* C++20-capable compiler (clang on macOS, gcc on Linux, MSVC on Windows)
+* BLAS/LAPACK implementation (OpenBLAS, MKL, or Accelerate on macOS)
+* git (to fetch submodules)
+* ninja recommended (CMake/scikit-build often prefer Ninja)
+* Network access (CMake will download Armadillo into extern by default) or provide extern/armadillo-<ver>/ or a system Armadillo install
+
+Quick install (fresh clone)
 
 ```bash
 git clone https://github.com/brdav/lib-ppca.git
 cd lib-ppca
-git submodule update --init --recursive   # pulls extern/carma
-pip install .                             # build and install
+git submodule update --init --recursive   # ensure extern/carma is present
+python -m pip install .                   # build and install
 ```
 
-Use an editable install for development:
+Editable install for development
 
 ```bash
 git clone https://github.com/brdav/lib-ppca.git
 cd lib-ppca
-git submodule update --init --recursive   # pulls extern/carma
-pip install -e '.[dev]'                   # editable install
-pre-commit install                        # register pre-commit hooks
+git submodule update --init --recursive
+python -m pip install -e '.[dev]'         # editable install
+pre-commit install                        # optional: register hooks
 ```
+
+### Windows
+
+Builds on Windows are untested in CI. You can attempt a Windows build but expect manual steps:
+
+* Install Visual Studio with the C++ toolchain (or a supported MinGW) and CMake.
+* Provide BLAS/LAPACK (OpenBLAS, MKL) and point CMake to their libraries.
+* Provide Armadillo sources (extern/armadillo-<ver>/) or install Armadillo system-wide and set ARMADILLO_ROOT_DIR/use find_package.
+* You may need to adjust linker/rpath settings or prefer static linking to avoid missing DLLs at runtime.
 
 ## Internals
 
-PPCA uses an Expectation-Maximization (EM) algorithm to learn parameters through maximum likelihood estimation. For details see the reference paper listed below. The equations for the EM algorithm in the presence of missing values are listed in [EQUATIONS.md](https://github.com/brdav/lib-ppca/EQUATIONS.md).
+PPCA uses an Expectation-Maximization (EM) algorithm to learn parameters through maximum likelihood estimation. For details see the reference paper listed below. The equations for the EM algorithm in the presence of missing values are listed in [EQUATIONS.md](https://github.com/brdav/lib-ppca/blob/main/EQUATIONS.md).
 
 ## Citing
 
@@ -89,7 +107,7 @@ If you use this code academically, cite the original PPCA paper:
 
 * M. Tipping & C. Bishop. Probabilistic Principal Component Analysis. JRSS B, 1999.
 
-You may also reference the repository URL.
+You may also reference the library name or URL.
 
 ## License
 

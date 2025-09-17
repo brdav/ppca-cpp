@@ -1,8 +1,8 @@
 include README.md
 include LICENSE
 include pyproject.toml
+include docs/teaser.jpg
 
 recursive-include cpp *
 recursive-include src/lib_ppca *
 recursive-include extern/carma *
-recursive-include docs *

@@ -32,3 +32,9 @@ build.ninja
 # jupyter
 .ipynb_checkpoints/
 .venv/
+
+# ignore everything in extern...
+/extern/*
+# ...but keep carma submodule
+!/extern/carma/
+!/extern/carma/**

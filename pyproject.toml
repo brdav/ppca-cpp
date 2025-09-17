@@ -36,14 +36,14 @@ Homepage = "https://github.com/brdav/lib-ppca"
 Source = "https://github.com/brdav/lib-ppca"
 
 [tool.scikit-build]
-wheel.expand-macos-universal-tags = true
-cmake.minimum-version = "3.18"
+cmake.version = ">3.18"
 cmake.build-type = "Release"
+wheel.expand-macos-universal-tags = true
 
 [tool.cibuildwheel]
 build = "cp39-* cp310-* cp311-*"
-# skip = "*-musllinux_*"
 test-command = "python -c \"import lib_ppca; print('Test passed')\""
+skip = "*musllinux*"
 
 [tool.pytest.ini_options]
 minversion = "7.0"
