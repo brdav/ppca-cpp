@@ -28,7 +28,7 @@ Probabilistic PCA (PPCA) with missing-data support — fast C++ core, clean Pyth
 pip install lib-ppca
 ```
 
-Note: pre-built wheels are produced only for Linux and macOS (CI builds target ubuntu-latest and macos-latest). On other platforms (e.g. Windows) pip you will need to build from source (see further below).
+Note: pre-built wheels are produced only for Linux and macOS (CI builds target ubuntu-latest and macos-latest). On other platforms (e.g. Windows) you will need to build from source (see further below).
 
 Usage example:
 
@@ -37,9 +37,9 @@ import numpy as np
 from lib_ppca import PPCA
 
 X_train = np.random.randn(600, 10)
-X_train[::7, 3] = np.nan  # introduce missing values
+X_train[::7, 3] = np.nan                  # missing values
 X_test = np.random.randn(100, 10)
-X_test[::7, 2] = np.nan  # introduce missing values
+X_test[::7, 2] = np.nan                   # missing values
 
 model = PPCA(n_components=3, batch_size=200)
 model.fit(X_train)
@@ -66,8 +66,7 @@ Minimum requirements
 * C++20-capable compiler (clang on macOS, gcc on Linux, MSVC on Windows)
 * BLAS/LAPACK implementation (OpenBLAS, MKL, or Accelerate on macOS)
 * git (to fetch submodules)
-* ninja recommended (CMake/scikit-build often prefer Ninja)
-* Network access (CMake will download Armadillo into extern by default) or provide extern/armadillo-<ver>/ or a system Armadillo install
+* Network access (CMake will download Armadillo into extern by default) or provide extern/armadillo-\<version\>/ or a system Armadillo install
 
 Quick install (fresh clone)
 
@@ -94,12 +93,12 @@ Builds on Windows are untested in CI. You can attempt a Windows build but expect
 
 * Install Visual Studio with the C++ toolchain (or a supported MinGW) and CMake.
 * Provide BLAS/LAPACK (OpenBLAS, MKL) and point CMake to their libraries.
-* Provide Armadillo sources (extern/armadillo-<ver>/) or install Armadillo system-wide and set ARMADILLO_ROOT_DIR/use find_package.
+* Provide Armadillo sources (extern/armadillo-\<version\>/) or install Armadillo system-wide and set ARMADILLO_ROOT_DIR/use find_package.
 * You may need to adjust linker/rpath settings or prefer static linking to avoid missing DLLs at runtime.
 
 ## Internals
 
-PPCA uses an Expectation-Maximization (EM) algorithm to learn parameters through maximum likelihood estimation. For details see the reference paper listed below. The equations for the EM algorithm in the presence of missing values are listed in [EQUATIONS.md](https://github.com/brdav/lib-ppca/blob/main/EQUATIONS.md).
+PPCA uses an Expectation-Maximization (EM) algorithm to learn parameters through maximum likelihood estimation. For details see the reference paper listed below. The equations for the EM algorithm in the presence of missing values are listed in [EQUATIONS.md](https://github.com/brdav/lib-ppca/blob/main/docs/EQUATIONS.md).
 
 ## Citing
 

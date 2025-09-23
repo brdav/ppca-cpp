@@ -111,7 +111,7 @@ class PPCA {
   arma::cube sample_missing(const arma::mat &X, size_t n_draws = 1) const;
 
   /**
-   * @brief Linear MMSE reconstruction E[X | Z].
+   * @brief Linear MMSE reconstruction.
    * @param Z (n_components x n_samples).
    * @return (n_features x n_samples) means.
    */

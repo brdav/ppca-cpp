@@ -67,8 +67,7 @@ class PPCA:
 
         If ``batch_size`` was provided at construction time, a mini-batch EM
         loop is used internally (one EM iteration per batch per outer epoch)
-        until convergence. Otherwise a full-batch EM / closed-form solver is
-        used.
+        until convergence. Otherwise a full-batch EM is used.
 
         Args:
             X: Input data of shape (n_samples, n_features). Missing entries
@@ -160,7 +159,8 @@ class PPCA:
     def impute_missing(
         self, X: ArrayLike
     ) -> Tuple[NDArray[np.floating], NDArray[np.floating]]:
-        """Conditional predictive distribution for missing entries.
+        """Conditional predictive distribution for data p(X | X_obs),
+        where X_obs denotes the observed entries in X.
 
         Args:
             X: Data with NaNs for missing values, shape (n_samples, n_features).
@@ -203,7 +203,7 @@ class PPCA:
         return X_tilde.transpose(2, 1, 0)
 
     def sample_missing(self, X: ArrayLike, n_draws: int = 1) -> NDArray[np.floating]:
-        """Draw samples for missing entries p(X_miss | X_obs).
+        """Draw full-data samples from p(X | X_obs).
 
         Args:
             X: Data with NaNs for missing values, shape (n_samples, n_features).
@@ -217,7 +217,8 @@ class PPCA:
         return X_tilde.transpose(2, 1, 0)
 
     def lmmse_reconstruction(self, Z: ArrayLike) -> NDArray[np.floating]:
-        """Linear MMSE reconstruction E[X | Z].
+        """Linear minimum mean square error reconstruction of the data
+        from the conditional latent mean.
 
         Args:
             Z: Latent variables of shape (n_samples, n_components).
