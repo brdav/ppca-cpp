@@ -2,8 +2,8 @@
 # ppca-cpp
 
 [![Build Wheels](https://img.shields.io/github/actions/workflow/status/brdav/ppca-cpp/.github/workflows/build.yml?branch=main)](https://github.com/brdav/ppca-cpp/actions)
-[![PyPI version](https://img.shields.io/pypi/v/ppca-cpp.svg)](https://pypi.org/project/ppca-cpp)
-[![Python Versions](https://img.shields.io/pypi/pyversions/ppca-cpp.svg)](https://pypi.org/project/ppca-cpp)
+[![PyPI version](https://img.shields.io/pypi/v/ppca-cpp.svg)](https://pypi.org/project/ppca-py)
+[![Python Versions](https://img.shields.io/pypi/pyversions/ppca-cpp.svg)](https://pypi.org/project/ppca-py)
 [![License](https://img.shields.io/github/license/brdav/ppca-cpp.svg)](LICENSE)
 
 Probabilistic PCA (PPCA) with missing-data support — fast C++ core, clean Python API.

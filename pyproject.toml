@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "ppca-py"
-version = "1.0.0"
+version = "1.0.1"
 description = "Probabilistic PCA (PPCA) with missing-data support - fast C++ core, clean Python API"
 readme = "README.md"
 license = {file = "LICENSE"}
