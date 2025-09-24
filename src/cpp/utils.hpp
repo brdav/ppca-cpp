@@ -4,8 +4,8 @@
 // license that can be found in the LICENSE file or at
 // https://opensource.org/licenses/MIT.
 
-#ifndef PPCA_HELPERS_H_
-#define PPCA_HELPERS_H_
+#ifndef UTILS_HPP
+#define UTILS_HPP
 
 #include <armadillo>
 
@@ -26,4 +26,4 @@ arma::cube sample_gaussian(const arma::mat& means, const arma::cube& covs,
 }  // namespace utils
 }  // namespace ppca
 
-#endif  // PPCA_HELPERS_H_
+#endif  // UTILS_HPP

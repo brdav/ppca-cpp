@@ -4,8 +4,8 @@
 // license that can be found in the LICENSE file or at
 // https://opensource.org/licenses/MIT.
 
-#ifndef LIB_PPCA_PPCA_HPP
-#define LIB_PPCA_PPCA_HPP
+#ifndef PPCA_HPP
+#define PPCA_HPP
 
 #include <armadillo>
 #include <cstddef>
@@ -324,4 +324,4 @@ class PPCA {
 
 }  // namespace ppca
 
-#endif  // LIB_PPCA_PPCA_HPP
+#endif  // PPCA_HPP
