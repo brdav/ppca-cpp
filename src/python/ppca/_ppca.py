@@ -1,3 +1,9 @@
+# Copyright 2025 brdav
+
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
 from __future__ import annotations
 
 from typing import Any, Dict, Mapping, Tuple
@@ -5,15 +11,7 @@ from typing import Any, Dict, Mapping, Tuple
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
-from ._version import __version__  # noqa: F401
-
-try:
-    from . import _bindings  # type: ignore
-except Exception as e:  # pragma: no cover
-    _bindings = None
-    _import_error = str(e)
-else:
-    _import_error = ""
+from . import _ppca_bindings
 
 
 class PPCA:
@@ -28,13 +26,12 @@ class PPCA:
         max_iter: Maximum EM iterations.
         min_iter: Minimum EM iterations before early stopping is considered.
         rtol: Relative tolerance for convergence.
-        rotate_to_orthogonal: If True, rotate loadings to an orthonormal basis
-            after fitting and expose spectral summaries (components_, etc.).
+        rotate_to_orthogonal: If True, rotate components to an orthonormal basis
+            after fitting and expose explained_variance_, etc.
         batch_size: Optional mini-batch size for EM; if None, use full batch.
         random_state: Optional RNG seed forwarded to the C++ backend.
 
     Raises:
-        RuntimeError: If the compiled extension failed to import.
         ValueError: If ``batch_size`` is provided and not positive.
     """
 
@@ -48,11 +45,9 @@ class PPCA:
         batch_size: int | None = None,
         random_state: int | None = None,
     ):
-        if _bindings is None:
-            raise RuntimeError(f"PPCA extension module not built: {_import_error}")
         if batch_size is not None and batch_size <= 0:
             raise ValueError("batch_size must be positive when provided")
-        self._model = _bindings._CPP_PPCA(
+        self._model = _ppca_bindings.PPCA(
             n_components,
             max_iter,
             min_iter,
@@ -67,8 +62,7 @@ class PPCA:
 
         If ``batch_size`` was provided at construction time, a mini-batch EM
         loop is used internally (one EM iteration per batch per outer epoch)
-        until convergence. Otherwise a full-batch EM / closed-form solver is
-        used.
+        until convergence. Otherwise a full-batch EM is used.
 
         Args:
             X: Input data of shape (n_samples, n_features). Missing entries
@@ -160,7 +154,8 @@ class PPCA:
     def impute_missing(
         self, X: ArrayLike
     ) -> Tuple[NDArray[np.floating], NDArray[np.floating]]:
-        """Conditional predictive distribution for missing entries.
+        """Conditional predictive distribution for data p(X | X_obs),
+        where X_obs denotes the observed entries in X.
 
         Args:
             X: Data with NaNs for missing values, shape (n_samples, n_features).
@@ -203,7 +198,7 @@ class PPCA:
         return X_tilde.transpose(2, 1, 0)
 
     def sample_missing(self, X: ArrayLike, n_draws: int = 1) -> NDArray[np.floating]:
-        """Draw samples for missing entries p(X_miss | X_obs).
+        """Draw full-data samples from p(X | X_obs).
 
         Args:
             X: Data with NaNs for missing values, shape (n_samples, n_features).
@@ -217,7 +212,8 @@ class PPCA:
         return X_tilde.transpose(2, 1, 0)
 
     def lmmse_reconstruction(self, Z: ArrayLike) -> NDArray[np.floating]:
-        """Linear MMSE reconstruction E[X | Z].
+        """Linear minimum mean square error reconstruction of the data
+        from the conditional latent mean.
 
         Args:
             Z: Latent variables of shape (n_samples, n_components).
@@ -234,34 +230,36 @@ class PPCA:
 
         Returns:
             dict: With keys
-                - "W": Loadings in Python orientation (n_components, n_features)
-                - "mu": Mean vector (n_features,)
-                - "sig2": Noise variance (scalar stored as ndarray)
+                - "components": Loadings in Python orientation (n_components, n_features)
+                - "mean": Mean vector (n_features,)
+                - "noise_variance": Noise variance (scalar stored as ndarray)
         """
         params = self._model.get_params()
         return {
-            "W": np.asarray(params["W"]).T,
-            "mu": np.squeeze(np.asarray(params["mu"]), axis=1),
-            "sig2": np.asarray(params["sig2"]),
+            "components": np.asarray(params["components"]).T,
+            "mean": np.squeeze(np.asarray(params["mean"]), axis=1),
+            "noise_variance": np.asarray(params["noise_variance"]),
         }
 
     def set_params(self, params: Mapping[str, Any]) -> None:
         """Set model parameters from Python-orientation arrays.
 
-        Expects keys "W", "mu", and "sig2". Shapes are in Python
-        orientation: W is (n_components, n_features) and will be transposed for
-        the backend; mu is (n_features,); sig2 is a scalar (float or ndarray).
+        Expects keys "components", "mean", and "noise_variance". Shapes are in Python
+        orientation: components is (n_components, n_features) and will be transposed for
+        the backend; mean is (n_features,); noise_variance is a scalar (float or ndarray).
 
         Args:
-            params: Mapping with keys "W", "mu", "sig2".
+            params: Mapping with keys "components", "mean", and "noise_variance".
 
         Raises:
             KeyError: If required keys are missing.
         """
-        W = np.asarray(params["W"], dtype=float).T
-        mu = np.asarray(params["mu"], dtype=float)
-        sig2 = float(np.asarray(params["sig2"], dtype=float))
-        self._model.set_params(W, mu, sig2)
+        components = np.asarray(params["components"], dtype=float).T
+        mean = np.asarray(params["mean"], dtype=float)
+        noise_variance = float(params["noise_variance"])
+        self._model.set_params(
+            {"components": components, "mean": mean, "noise_variance": noise_variance}
+        )
 
     @property
     def components_(self) -> NDArray[np.floating]:

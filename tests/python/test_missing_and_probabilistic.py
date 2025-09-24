@@ -1,6 +1,11 @@
-import numpy as np
+# Copyright 2025 brdav
 
-from lib_ppca import PPCA
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
+import numpy as np
+from ppca import PPCA
 
 
 def make_synthetic(n_samples=120, n_features=6, n_components=2, sig2=0.05, seed=0):

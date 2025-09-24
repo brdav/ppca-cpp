@@ -6,7 +6,6 @@ repos:
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-added-large-files
-        exclude: \.ipynb$
 
   - repo: https://github.com/psf/black
     rev: 23.7.0
@@ -31,7 +30,7 @@ repos:
     hooks:
       - id: clang-format
         files: \.(cpp|hpp|cxx|hxx)$
-        args: [--style=Google]  # Adjust style as needed
+        args: [--style=Google]
 
   - repo: local
     hooks:
