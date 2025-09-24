@@ -4,6 +4,8 @@
 # license that can be found in the LICENSE file or at
 # https://opensource.org/licenses/MIT.
 
+from __future__ import annotations
+
 from typing import Any, Mapping, Tuple
 
 import numpy as np
@@ -17,7 +19,7 @@ class PPCA:
         min_iter: int,
         rtol: float,
         rotate_to_orthogonal: bool,
-        batch_size: int,
+        batch_size: int | None,
         random_state: int | None,
     ) -> None: ...
     def fit(self, X: ArrayLike) -> None: ...
