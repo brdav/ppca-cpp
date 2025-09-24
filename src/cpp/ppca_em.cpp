@@ -143,17 +143,17 @@ PPCA::Params PPCA::em_complete_batch(const arma::mat& x_centered,
       const arma::uword current_batch_size = end - start;
       const arma::span col_span(start, end - 1);
 
-      const arma::mat x_centered_batch = x_centered.cols(col_span);
-      const arma::umat observations_batch = observations.cols(col_span);
+      // Note: We could cache m_inv in latent_posterior_moments since it doesn't
+      // depend on the data.
+      const auto x_centered_batch = x_centered.cols(col_span);
+      const auto observations_batch = observations.cols(col_span);
       const LatentMoments latent_moments = latent_posterior_moments(
           x_centered_batch, w_current, noise_var_current, observations_batch);
 
       const arma::mat& ez_batch = latent_moments.ez;
       const arma::cube& ezz_batch = latent_moments.ezz;
 
-      for (arma::uword i = 0; i < current_batch_size; ++i) {
-        sum_ezz += ezz_batch.slice(i);
-      }
+      sum_ezz += arma::sum(ezz_batch, 2);
       sum_ez_x_T += ez_batch * x_centered_batch.t();
       sum_x_centered_sq += arma::accu(arma::square(x_centered_batch));
     }
@@ -162,11 +162,10 @@ PPCA::Params PPCA::em_complete_batch(const arma::mat& x_centered,
     const arma::mat w_new = arma::solve(arma::symmatu(sum_ezz), sum_ez_x_T,
                                         arma::solve_opts::likely_sympd)
                                 .t();
-    const arma::mat w_transpose_w = w_new.t() * w_new;
 
     const double term1 = sum_x_centered_sq;
     const double term2 = 2.0 * arma::trace(sum_ez_x_T * w_new);
-    const double term3 = arma::accu(sum_ezz % w_transpose_w);
+    const double term3 = arma::accu(sum_ezz % (w_new.t() * w_new));
     double noise_var_new =
         (term1 - term2 + term3) / (n_features_in_ * n_samples_);
 
@@ -192,6 +191,13 @@ PPCA::Params PPCA::em_missing_batch(const arma::mat& x_centered,
   const std::size_t n_batches = batching.first;
   const std::size_t effective_batch_size = batching.second;
 
+  // Precompute observed indices for each sample
+  std::vector<arma::uvec> observed_indices_per_sample(x_centered.n_cols);
+
+  for (arma::uword col = 0; col < observations.n_cols; ++col) {
+    observed_indices_per_sample[col] = arma::find(observations.col(col));
+  }
+
   auto minibatch_missing_update =
       [&](const arma::mat& w_current,
           double noise_var_current) -> UpdateResult {
@@ -211,8 +217,8 @@ PPCA::Params PPCA::em_missing_batch(const arma::mat& x_centered,
       const arma::uword current_batch_size = end - start;
       const arma::span col_span(start, end - 1);
 
-      const arma::mat x_centered_batch = x_centered.cols(col_span);
-      const arma::umat observations_batch = observations.cols(col_span);
+      const auto x_centered_batch = x_centered.cols(col_span);
+      const auto observations_batch = observations.cols(col_span);
       const LatentMoments latent_moments = latent_posterior_moments(
           x_centered_batch, w_current, noise_var_current, observations_batch);
 
@@ -222,8 +228,8 @@ PPCA::Params PPCA::em_missing_batch(const arma::mat& x_centered,
       for (arma::uword local_idx = 0; local_idx < current_batch_size;
            ++local_idx) {
         const arma::uword global_idx = start + local_idx;
-        const arma::uvec observed_indices =
-            arma::find(observations_batch.col(local_idx));
+        const arma::uvec& observed_indices =
+            observed_indices_per_sample[global_idx];
         const arma::vec& ez_n = ez_batch.col(local_idx);
         const arma::mat& ezz_n = ezz_batch.slice(local_idx);
 
