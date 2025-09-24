@@ -3,6 +3,7 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+_build/
 *.so
 *.dylib
 *.dll
@@ -30,6 +31,7 @@ build.ninja
 *.o
 
 # jupyter
+*.ipynb
 .ipynb_checkpoints/
 .venv/
 
