@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "ppca-py"
-version = "1.0.1"
+version = "1.0.2"
 description = "Probabilistic PCA (PPCA) with missing-data support - fast C++ core, clean Python API"
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -12,6 +12,9 @@ requires-python = ">=3.9"
 authors = [ { name = "brdav", email = "" } ]
 classifiers = [
   "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
   "Programming Language :: C++",
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",

@@ -2,8 +2,8 @@
 # ppca-cpp
 
 [![Build Wheels](https://img.shields.io/github/actions/workflow/status/brdav/ppca-cpp/.github/workflows/build.yml?branch=main)](https://github.com/brdav/ppca-cpp/actions)
-[![PyPI version](https://img.shields.io/pypi/v/ppca-cpp.svg)](https://pypi.org/project/ppca-py)
-[![Python Versions](https://img.shields.io/pypi/pyversions/ppca-cpp.svg)](https://pypi.org/project/ppca-py)
+[![PyPI version](https://img.shields.io/pypi/v/ppca-py.svg)](https://pypi.org/project/ppca-py)
+[![Python Versions](https://img.shields.io/pypi/pyversions/ppca-py.svg)](https://pypi.org/project/ppca-py)
 [![License](https://img.shields.io/github/license/brdav/ppca-cpp.svg)](LICENSE)
 
 Probabilistic PCA (PPCA) with missing-data support — fast C++ core, clean Python API.
@@ -57,7 +57,7 @@ print("Mean:", model.mean_)
 print("Noise variance:", model.noise_variance_)
 ```
 
-For a short PPCA reference doc see `docs/ppca.md`, and a some example scripts are provided in `examples/`.
+For a short PPCA reference doc see `docs/ppca.md`, and some usage examples are provided in `examples/`.
 
 ## Installation from Source
 
