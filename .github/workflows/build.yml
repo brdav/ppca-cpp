@@ -1,23 +1,35 @@
-name: Build Wheels
+name: Wheel builder
+
 on: [push, pull_request]
+
 jobs:
   build_wheels:
     runs-on: ${{ matrix.os }}
+
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]  # skip Windows
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
           submodules: recursive  # for CARMA submodule
-      - uses: actions/setup-python@v4
-      - name: Install system BLAS/LAPACK
-        if: matrix.os == 'ubuntu-latest'
-        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev
-      - run: pip install cibuildwheel
-      - run: cibuildwheel --output-dir wheelhouse
-      - uses: actions/upload-artifact@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install cibuildwheel
+        run: pip install cibuildwheel
+
+      - name: Build wheels
+        run: cibuildwheel --output-dir wheelhouse
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
         with:
           name: wheels-${{ matrix.os }}
           path: wheelhouse/
