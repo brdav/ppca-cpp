@@ -10,8 +10,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive  # For CARMA submodule
+          submodules: recursive  # for CARMA submodule
       - uses: actions/setup-python@v4
+      - name: Install system BLAS/LAPACK
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y libopenblas-dev liblapack-dev
       - run: pip install cibuildwheel
       - run: cibuildwheel --output-dir wheelhouse
       - uses: actions/upload-artifact@v4
