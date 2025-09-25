@@ -12,7 +12,7 @@ Probabilistic PCA (PPCA) with missing-data support — fast C++ core, clean Pyth
 
 ## Overview
 
-**ppca-cpp** implements Probabilistic Principal Component Analysis (PPCA) as described by Tipping & Bishop (1999), with a focus on speed, usability, and robust handling of missing data. The core is written in C++ (Armadillo + CARMA + pybind11), exposed via a simple Python interface.
+**ppca-cpp** implements Probabilistic Principal Component Analysis (PPCA) as described by Tipping & Bishop (1999), with a focus on speed, usability, and robust handling of missing data. The core is written in C++ (Armadillo), exposed via a simple Python interface.
 
 ### Key Features
 
