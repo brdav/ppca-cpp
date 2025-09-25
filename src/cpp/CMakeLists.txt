@@ -7,6 +7,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Find and link BLAS/LAPACK (required by Armadillo)
+find_package(BLAS REQUIRED)
+find_package(LAPACK REQUIRED)
+
 include(FetchContent)
 
 ## # --- Armadillo vendoring using FetchContent ------------------------------
@@ -38,5 +42,5 @@ target_include_directories(ppca PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 # Ensure the static library is built as PIC so it can be linked into a shared module
 set_target_properties(ppca PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-# Link to Armadillo target
-target_link_libraries(ppca PUBLIC armadillo)
+# Link to Armadillo target and system BLAS/LAPACK
+target_link_libraries(ppca PUBLIC armadillo ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})

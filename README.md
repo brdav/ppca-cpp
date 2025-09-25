@@ -71,6 +71,13 @@ python -m pip install -e '.[dev]'
 pre-commit install
 ```
 
+Minimum build dependencies
+
+- CMake >= 3.18
+- Python >= 3.9 (development headers)
+- C++17-capable compiler (clang, gcc, or MSVC)
+- BLAS/LAPACK implementation (OpenBLAS, MKL, or Accelerate)
+
 Note: Builds on Windows are untested in CI. You can attempt a Windows build but expect manual steps.
 
 The PPCA C++ core can also be built independently:
