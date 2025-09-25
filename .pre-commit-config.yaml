@@ -37,6 +37,6 @@ repos:
       - id: pytest
         name: Build and run pytest
         entry: ./scripts/run_tests.sh
-        language: python
+        language: system
         pass_filenames: false
         always_run: true

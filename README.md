@@ -8,7 +8,7 @@
 
 Probabilistic PCA (PPCA) with missing-data support — fast C++ core, clean Python API.
 
-<img src="https://raw.githubusercontent.com/brdav/ppca-cpp/main/docs/teaser.jpg" width="500" alt="teaser"/>
+![ppca teaser](https://raw.githubusercontent.com/brdav/ppca-cpp/main/docs/teaser.png)
 
 ## Overview
 
@@ -61,35 +61,24 @@ For a short PPCA reference doc see `docs/ppca.md`, and some usage examples are p
 
 ## Installation from Source
 
-Minimum requirements
-
-* CMake >= 3.18
-* Python >= 3.9 (+ development headers)
-* C++17-capable compiler (clang on macOS, gcc on Linux, MSVC on Windows)
-* BLAS/LAPACK implementation (OpenBLAS, MKL, or Accelerate on macOS)
-* git (to fetch submodules)
-* Network access (CMake will download Armadillo into extern by default) or provide extern/armadillo-\<version\>/ or a system Armadillo install
-
-Quick install (fresh clone)
-
-```bash
-git clone https://github.com/brdav/ppca-cpp.git
-cd ppca-cpp
-git submodule update --init --recursive   # ensure extern/carma is present
-python -m pip install .                   # build and install
-```
-
-Editable install for development
+For development install from source:
 
 ```bash
 git clone https://github.com/brdav/ppca-cpp.git
 cd ppca-cpp
 git submodule update --init --recursive
-python -m pip install -e '.[dev]'         # editable install
-pre-commit install                        # optional: register hooks
+python -m pip install -e '.[dev]'
+pre-commit install
 ```
 
 Note: Builds on Windows are untested in CI. You can attempt a Windows build but expect manual steps.
+
+The PPCA C++ core can also be built independently:
+
+```bash
+cmake -S src/cpp -B build/cpp -DCMAKE_BUILD_TYPE=Release
+cmake --build build/cpp --target ppca -j
+```
 
 ## Internals
 
