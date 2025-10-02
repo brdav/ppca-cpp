@@ -261,6 +261,32 @@ class PPCA:
             {"components": components, "mean": mean, "noise_variance": noise_variance}
         )
 
+    def transform(self, X: ArrayLike) -> NDArray[np.floating]:
+        """Transform data into the latent space.
+
+        This returns the posterior mean of the latent variables, E[Z | X].
+
+        Args:
+            X: Data of shape (n_samples, n_features).
+
+        Returns:
+            ndarray: Latent variable means, shape (n_samples, n_components).
+        """
+        mZ, _ = self.posterior_latent(X)
+        return mZ
+
+    def fit_transform(self, X: ArrayLike) -> NDArray[np.floating]:
+        """Fit the model and transform the data into the latent space.
+
+        Args:
+            X: Data of shape (n_samples, n_features).
+
+        Returns:
+            ndarray: Latent variable means, shape (n_samples, n_components).
+        """
+        self.fit(X)
+        return self.transform(X)
+    
     @property
     def components_(self) -> NDArray[np.floating]:
         """Orthogonal components (if available), shape (n_components, n_features)."""
