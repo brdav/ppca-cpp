@@ -32,9 +32,9 @@ add_library(ppca STATIC
   ${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp
 )
 
-# Tell the compiler to use header-only mode
+# Ignore Armadillo's wrapper and use the linked BLAS/LAPACK
 target_compile_definitions(ppca PUBLIC ARMA_DONT_USE_WRAPPER)
-target_include_directories(ppca PUBLIC 
+target_include_directories(ppca PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${armadillo_vendored_SOURCE_DIR}/include
 )
