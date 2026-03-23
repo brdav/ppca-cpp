@@ -47,7 +47,7 @@ class PPCA {
    * @param rtol Relative tolerance for the change in negative log-likelihood
    * to determine convergence.
    * @param rotate_to_orthogonal If true, the principal components are rotated
-   * to be orthonormal after fitting. This enables the `explained_variance_`
+   * to be orthogonal after fitting. This enables the `explained_variance_`
    * and `explained_variance_ratio_` attributes.
    * @param batch_size The size of mini-batches for the EM algorithm. If 0,
    * full-batch EM is used.
@@ -156,10 +156,11 @@ class PPCA {
 
   /**
    * @brief Linear minimum mean-squared error (LMMSE) reconstruction from
-   * latent.
+   * latent posterior mean.
    *
-   * Returns the reconstructed observed-space data given latent variables Z,
-   * applying the analytic LMMSE scaling that accounts for the isotropic noise.
+   * Returns the reconstructed observed-space data given latent posterior mean
+   * Z, applying the analytic LMMSE scaling that accounts for the isotropic
+   * noise.
    *
    * @param z_latent The latent variables matrix (n_components x n_samples).
    * @return Reconstructed data matrix (n_features x n_samples).

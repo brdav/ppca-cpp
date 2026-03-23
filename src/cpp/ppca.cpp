@@ -138,7 +138,7 @@ void PPCA::set_params(const Params& params) {
 // -----------------------------------------------------------------------------
 
 void PPCA::compute_orthogonal_summary_and_rotate_components() {
-  // Decompose components_ via SVD to find orthonormal components and explained
+  // Decompose components_ via SVD to find orthogonal components and explained
   // variance.
   arma::mat U;
   arma::vec s;
@@ -175,7 +175,7 @@ void PPCA::ensure_fitted() const {
 void PPCA::ensure_components_available() const {
   if (!rotate_to_orthogonal_) {
     throw std::logic_error(
-        "Components and variance attributes are only available when "
+        "Variance attributes are only available when "
         "rotate_to_orthogonal=true.");
   }
 }
