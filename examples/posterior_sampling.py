@@ -19,7 +19,7 @@ Z0 = Z_samples[0]
 X_mean, X_cov = model.likelihood(Z0)
 print("likelihood mean shape:", X_mean.shape)
 
-# Draw samples from likelihood (optional)
+# Draw samples from likelihood
 X_lik_samples = model.sample_likelihood(Z0, n_draws=10)
 print("X_lik_samples shape:", X_lik_samples.shape)
 print("Done")
