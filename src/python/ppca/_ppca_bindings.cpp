@@ -9,11 +9,100 @@
 #include <pybind11/stl.h>
 
 #include <armadillo>
-#include <carma>
+#include <string>
 
 #include "ppca.hpp"
 
 namespace py = pybind11;
+
+namespace {
+
+arma::mat numpy_to_arma_mat(const py::array& array, const char* name) {
+  py::array_t<double, py::array::forcecast> arr(array);
+  if (arr.ndim() != 2) {
+    throw py::value_error(std::string(name) + " must be a 2D array");
+  }
+
+  const auto view = arr.unchecked<2>();
+  arma::mat out(view.shape(0), view.shape(1));
+  for (py::ssize_t r = 0; r < view.shape(0); ++r) {
+    for (py::ssize_t c = 0; c < view.shape(1); ++c) {
+      out(static_cast<arma::uword>(r), static_cast<arma::uword>(c)) =
+          view(r, c);
+    }
+  }
+  return out;
+}
+
+arma::vec numpy_to_arma_vec(const py::array& array, const char* name) {
+  py::array_t<double, py::array::forcecast> arr(array);
+
+  if (arr.ndim() == 1) {
+    const auto view = arr.unchecked<1>();
+    arma::vec out(view.shape(0));
+    for (py::ssize_t i = 0; i < view.shape(0); ++i) {
+      out(static_cast<arma::uword>(i)) = view(i);
+    }
+    return out;
+  }
+
+  if (arr.ndim() == 2 && (arr.shape(0) == 1 || arr.shape(1) == 1)) {
+    const auto view = arr.unchecked<2>();
+    const py::ssize_t n = view.shape(0) * view.shape(1);
+    arma::vec out(n);
+    py::ssize_t i = 0;
+    for (py::ssize_t r = 0; r < view.shape(0); ++r) {
+      for (py::ssize_t c = 0; c < view.shape(1); ++c) {
+        out(static_cast<arma::uword>(i++)) = view(r, c);
+      }
+    }
+    return out;
+  }
+
+  throw py::value_error(std::string(name) +
+                        " must be a 1D array or a 2D single-column/row array");
+}
+
+py::array_t<double> arma_mat_to_numpy(const arma::mat& mat) {
+  py::array_t<double> out({static_cast<py::ssize_t>(mat.n_rows),
+                           static_cast<py::ssize_t>(mat.n_cols)});
+  auto view = out.mutable_unchecked<2>();
+  for (arma::uword r = 0; r < mat.n_rows; ++r) {
+    for (arma::uword c = 0; c < mat.n_cols; ++c) {
+      view(static_cast<py::ssize_t>(r), static_cast<py::ssize_t>(c)) =
+          mat(r, c);
+    }
+  }
+  return out;
+}
+
+py::array_t<double> arma_vec_to_numpy_col(const arma::vec& vec) {
+  py::array_t<double> out(
+      {static_cast<py::ssize_t>(vec.n_elem), static_cast<py::ssize_t>(1)});
+  auto view = out.mutable_unchecked<2>();
+  for (arma::uword i = 0; i < vec.n_elem; ++i) {
+    view(static_cast<py::ssize_t>(i), 0) = vec(i);
+  }
+  return out;
+}
+
+py::array_t<double> arma_cube_to_numpy(const arma::cube& cube) {
+  py::array_t<double> out({static_cast<py::ssize_t>(cube.n_rows),
+                           static_cast<py::ssize_t>(cube.n_cols),
+                           static_cast<py::ssize_t>(cube.n_slices)});
+  auto view = out.mutable_unchecked<3>();
+  for (arma::uword s = 0; s < cube.n_slices; ++s) {
+    for (arma::uword c = 0; c < cube.n_cols; ++c) {
+      for (arma::uword r = 0; r < cube.n_rows; ++r) {
+        view(static_cast<py::ssize_t>(r), static_cast<py::ssize_t>(c),
+             static_cast<py::ssize_t>(s)) = cube(r, c, s);
+      }
+    }
+  }
+  return out;
+}
+
+}  // namespace
 
 PYBIND11_MODULE(_ppca_bindings, m) {
   m.doc() =
@@ -31,10 +120,7 @@ PYBIND11_MODULE(_ppca_bindings, m) {
       .def(
           "fit",
           [](ppca::PPCA& self, py::array X) {
-            auto x_view = carma::arr_to_mat_view<double>(
-                py::cast<py::array_t<double>>(X));
-            arma::mat x_mat(
-                x_view);  // copy to ensure owning (avoid stride issues)
+            arma::mat x_mat = numpy_to_arma_mat(X, "X");
             self.fit(x_mat);
             return &self;
           },
@@ -42,66 +128,56 @@ PYBIND11_MODULE(_ppca_bindings, m) {
 
       .def("score_samples",
            [](const ppca::PPCA& self, py::array X) {
-             auto x_view = carma::arr_to_mat_view<double>(
-                 py::cast<py::array_t<double>>(X));
-             arma::mat x_mat(x_view);
+             arma::mat x_mat = numpy_to_arma_mat(X, "X");
              const arma::vec& ll_vec = self.score_samples(x_mat);
-             return carma::col_to_arr(ll_vec);
+             return arma_vec_to_numpy_col(ll_vec);
            })
 
       .def("score",
            [](const ppca::PPCA& self, py::array X) {
-             auto x_view = carma::arr_to_mat_view<double>(
-                 py::cast<py::array_t<double>>(X));
-             arma::mat x_mat(x_view);
+             arma::mat x_mat = numpy_to_arma_mat(X, "X");
              return self.score(x_mat);
            })
 
       .def("get_covariance",
            [](const ppca::PPCA& self) {
              arma::mat cov = self.get_covariance();
-             return carma::mat_to_arr(cov);
+             return arma_mat_to_numpy(cov);
            })
 
       .def("get_precision",
            [](const ppca::PPCA& self) {
              arma::mat prec = self.get_precision();
-             return carma::mat_to_arr(prec);
+             return arma_mat_to_numpy(prec);
            })
 
       .def(
           "posterior_latent",
           [](const ppca::PPCA& self, py::array X) {
-            auto x_view = carma::arr_to_mat_view<double>(
-                py::cast<py::array_t<double>>(X));
-            arma::mat x_mat(x_view);
+            arma::mat x_mat = numpy_to_arma_mat(X, "X");
             auto [ez, cz] = self.posterior_latent(x_mat);
-            return py::make_tuple(carma::mat_to_arr(ez),
-                                  carma::cube_to_arr(cz));
+            return py::make_tuple(arma_mat_to_numpy(ez),
+                                  arma_cube_to_numpy(cz));
           },
           py::arg("X"))
 
       .def(
           "likelihood",
           [](const ppca::PPCA& self, py::array Z) {
-            auto z_view = carma::arr_to_mat_view<double>(
-                py::cast<py::array_t<double>>(Z));
-            arma::mat z_mat(z_view);
+            arma::mat z_mat = numpy_to_arma_mat(Z, "Z");
             auto [x_hat, cov_mat] = self.likelihood(z_mat);
-            return py::make_tuple(carma::mat_to_arr(x_hat),
-                                  carma::cube_to_arr(cov_mat));
+            return py::make_tuple(arma_mat_to_numpy(x_hat),
+                                  arma_cube_to_numpy(cov_mat));
           },
           py::arg("Z"))
 
       .def(
           "impute_missing",
           [](const ppca::PPCA& self, py::array X) {
-            auto x_view = carma::arr_to_mat_view<double>(
-                py::cast<py::array_t<double>>(X));
-            arma::mat x_mat(x_view);
+            arma::mat x_mat = numpy_to_arma_mat(X, "X");
             auto [x_hat, cov_mat] = self.impute_missing(x_mat);
-            return py::make_tuple(carma::mat_to_arr(x_hat),
-                                  carma::cube_to_arr(cov_mat));
+            return py::make_tuple(arma_mat_to_numpy(x_hat),
+                                  arma_cube_to_numpy(cov_mat));
           },
           py::arg("X"))
 
@@ -109,11 +185,9 @@ PYBIND11_MODULE(_ppca_bindings, m) {
           "sample_posterior_latent",
           [](const ppca::PPCA& self, py::array X,
              std::size_t n_draws /* = 1 */) {
-            auto x_view = carma::arr_to_mat_view<double>(
-                py::cast<py::array_t<double>>(X));
-            arma::mat x_mat(x_view);
+            arma::mat x_mat = numpy_to_arma_mat(X, "X");
             arma::cube z_tilde = self.sample_posterior_latent(x_mat, n_draws);
-            return carma::cube_to_arr(z_tilde);
+            return arma_cube_to_numpy(z_tilde);
           },
           py::arg("X"), py::arg("n_draws"))
 
@@ -121,11 +195,9 @@ PYBIND11_MODULE(_ppca_bindings, m) {
           "sample_likelihood",
           [](const ppca::PPCA& self, py::array Z,
              std::size_t n_draws /* = 1 */) {
-            auto z_view = carma::arr_to_mat_view<double>(
-                py::cast<py::array_t<double>>(Z));
-            arma::mat z_mat(z_view);
+            arma::mat z_mat = numpy_to_arma_mat(Z, "Z");
             arma::cube x_tilde = self.sample_likelihood(z_mat, n_draws);
-            return carma::cube_to_arr(x_tilde);
+            return arma_cube_to_numpy(x_tilde);
           },
           py::arg("Z"), py::arg("n_draws"))
 
@@ -133,22 +205,18 @@ PYBIND11_MODULE(_ppca_bindings, m) {
           "sample_missing",
           [](const ppca::PPCA& self, py::array X,
              std::size_t n_draws /* = 1 */) {
-            auto x_view = carma::arr_to_mat_view<double>(
-                py::cast<py::array_t<double>>(X));
-            arma::mat x_mat(x_view);
+            arma::mat x_mat = numpy_to_arma_mat(X, "X");
             arma::cube x_tilde = self.sample_missing(x_mat, n_draws);
-            return carma::cube_to_arr(x_tilde);
+            return arma_cube_to_numpy(x_tilde);
           },
           py::arg("X"), py::arg("n_draws"))
 
       .def(
           "lmmse_reconstruction",
           [](const ppca::PPCA& self, py::array Ez) {
-            auto ez_view = carma::arr_to_mat_view<double>(
-                py::cast<py::array_t<double>>(Ez));
-            arma::mat ez_mat(ez_view);
+            arma::mat ez_mat = numpy_to_arma_mat(Ez, "Ez");
             arma::mat x_hat = self.lmmse_reconstruction(ez_mat);
-            return carma::mat_to_arr(x_hat);
+            return arma_mat_to_numpy(x_hat);
           },
           py::arg("Ez"))
 
@@ -156,8 +224,8 @@ PYBIND11_MODULE(_ppca_bindings, m) {
            [](const ppca::PPCA& self) {
              auto p = self.get_params();
              py::dict d;
-             d["components"] = carma::mat_to_arr(p.components);
-             d["mean"] = carma::col_to_arr(p.mean);
+             d["components"] = arma_mat_to_numpy(p.components);
+             d["mean"] = arma_vec_to_numpy_col(p.mean);
              d["noise_variance"] = p.noise_variance;
              return d;
            })
@@ -176,14 +244,10 @@ PYBIND11_MODULE(_ppca_bindings, m) {
             py::object mean_obj = params["mean"];
             py::object nv_obj = params["noise_variance"];
 
-            auto components_view =
-                carma::arr_to_mat_view<double>(py::cast<py::array_t<double>>(
-                    py::cast<py::array>(components_obj)));
-            arma::mat components_mat(components_view);
-
-            auto mean_view = carma::arr_to_col_view<double>(
-                py::cast<py::array_t<double>>(py::cast<py::array>(mean_obj)));
-            arma::vec mean_vec(mean_view);
+            arma::mat components_mat = numpy_to_arma_mat(
+                py::cast<py::array>(components_obj), "params['components']");
+            arma::vec mean_vec = numpy_to_arma_vec(
+                py::cast<py::array>(mean_obj), "params['mean']");
 
             double noise_variance = py::cast<double>(nv_obj);
 
@@ -196,13 +260,13 @@ PYBIND11_MODULE(_ppca_bindings, m) {
       .def_property_readonly("components",
                              [](const ppca::PPCA& self) {
                                const arma::mat& comps = self.components();
-                               return carma::mat_to_arr(comps);
+                               return arma_mat_to_numpy(comps);
                              })
 
       .def_property_readonly("mean",
                              [](const ppca::PPCA& self) {
                                const arma::vec& mean_vec = self.mean();
-                               return carma::col_to_arr(mean_vec);
+                               return arma_vec_to_numpy_col(mean_vec);
                              })
 
       .def_property_readonly(
@@ -212,14 +276,14 @@ PYBIND11_MODULE(_ppca_bindings, m) {
       .def_property_readonly("explained_variance",
                              [](const ppca::PPCA& self) {
                                const arma::vec& v = self.explained_variance();
-                               return carma::col_to_arr(v);
+                               return arma_vec_to_numpy_col(v);
                              })
 
       .def_property_readonly("explained_variance_ratio",
                              [](const ppca::PPCA& self) {
                                const arma::vec& v =
                                    self.explained_variance_ratio();
-                               return carma::col_to_arr(v);
+                               return arma_vec_to_numpy_col(v);
                              })
 
       .def_property_readonly(

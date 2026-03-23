@@ -14,8 +14,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          submodules: recursive  # for CARMA submodule
 
       - name: Setup Python
         uses: actions/setup-python@v5
