@@ -52,6 +52,9 @@ build = "cp39-* cp310-* cp311-* cp312-* cp313-* cp314-*"
 test-command = "python -c \"import ppca; print('Test passed')\""
 skip = "*musllinux*"
 
+[tool.cibuildwheel.linux]
+before-all = "yum install -y lapack-devel openblas-devel"
+
 [tool.pytest.ini_options]
 minversion = "7.0"
 addopts = "-q"
